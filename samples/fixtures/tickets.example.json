@@ -1,0 +1,131 @@
+{
+  "sprint_id": "S3",
+  "tickets": [
+    {
+      "id": "S3-T1",
+      "title": "Implement booking creation endpoint with availability check",
+      "type": "feature",
+      "description": "Create `POST /api/bookings` that accepts owner id, walker id, date, start time, and duration (minutes).\n\nBefore inserting, query the bookings table to confirm the walker has no overlapping confirmed or pending booking in the requested window. Return `409 Conflict` with a clear message if unavailable.\n\nOn success, create a booking record with status `pending_walker_acceptance` and return the full booking object.",
+      "acceptance_criteria": [
+        "A booking is created and returned with status `pending_walker_acceptance` when the walker is free.",
+        "A 409 is returned with a human-readable message when the walker already has an overlapping booking.",
+        "The overlap check covers both `pending_walker_acceptance` and `confirmed` statuses.",
+        "The endpoint rejects requests from walkers (owner role required).",
+        "Unit tests cover: successful creation, overlap with confirmed booking, overlap with pending booking, wrong role."
+      ],
+      "technical_notes": "Use a database-level row lock (`SELECT ... FOR UPDATE`) inside a transaction to prevent race conditions between simultaneous booking attempts for the same walker slot.",
+      "areas": ["backend"],
+      "size": "M",
+      "priority": "high",
+      "depends_on": [],
+      "requirement_ids": ["R4"],
+      "needs_clarification": false,
+      "clarification_note": null
+    },
+    {
+      "id": "S3-T2",
+      "title": "Add booking accept and decline endpoints",
+      "type": "feature",
+      "description": "Create `PATCH /api/bookings/{id}/accept` and `PATCH /api/bookings/{id}/decline` restricted to the walker role.\n\n- `accept`: transitions status from `pending_walker_acceptance` → `confirmed`. Triggers the payment capture flow (placeholder hook for S4-T1) and sends the confirmation email.\n- `decline`: transitions status → `declined`. Sends the declined email to the owner and releases no payment (none taken yet at this stage).\n\nBoth endpoints must reject requests if the booking is not in `pending_walker_acceptance` status.",
+      "acceptance_criteria": [
+        "Accept transitions status to `confirmed` and returns the updated booking.",
+        "Decline transitions status to `declined` and returns the updated booking.",
+        "Both endpoints return 403 if called by an owner.",
+        "Both endpoints return 409 if the booking is already in a terminal status.",
+        "Email notification is triggered on both accept and decline (can be a stub in this sprint)."
+      ],
+      "technical_notes": "Payment capture is a placeholder stub in this sprint; the real Stripe call is wired in S4-T1. Keep the hook so S4 can drop in without changing this file.",
+      "areas": ["backend"],
+      "size": "S",
+      "priority": "high",
+      "depends_on": ["S3-T1"],
+      "requirement_ids": ["R5"],
+      "needs_clarification": false,
+      "clarification_note": null
+    },
+    {
+      "id": "S3-T3",
+      "title": "Implement 30-minute booking expiry background job",
+      "type": "feature",
+      "description": "Add a scheduled task (APScheduler or a lightweight cron-style loop) that runs every minute and transitions any booking still in `pending_walker_acceptance` status after 30 minutes to `expired`.\n\nSend the owner an email when a booking expires.",
+      "acceptance_criteria": [
+        "Bookings older than 30 minutes in `pending_walker_acceptance` are moved to `expired` on the next job run.",
+        "An email is sent to the owner when a booking expires.",
+        "The job does not touch bookings in any other status.",
+        "The expiry window is a configurable constant, not a magic number."
+      ],
+      "technical_notes": "For the Vercel serverless deployment, a background thread is not persistent. Consider using a Vercel Cron Job hitting an internal `POST /api/internal/expire-bookings` endpoint instead. Flag this for Person D to configure in `vercel.json`.",
+      "areas": ["backend", "devops"],
+      "size": "M",
+      "priority": "high",
+      "depends_on": ["S3-T1"],
+      "requirement_ids": ["R5"],
+      "needs_clarification": true,
+      "clarification_note": "Vercel serverless functions do not support long-running background threads. The expiry mechanism must use a Vercel Cron Job or an external scheduler. Confirm the deployment approach with Person D before implementing."
+    },
+    {
+      "id": "S3-T4",
+      "title": "Build booking status UI for owners",
+      "type": "feature",
+      "description": "Add a `/my-bookings` page (owner view) that lists all bookings with their current status, walker name, date/time, and duration.\n\nStatus badges: `Pending walker`, `Confirmed`, `Declined`, `Expired`, `Completed`.\n\nTapping a booking opens a detail panel with the walker profile link and (when confirmed) a button to view the live walk (navigates to the tracking view from S4).",
+      "acceptance_criteria": [
+        "All bookings for the logged-in owner are listed, newest first.",
+        "Each booking shows status, walker name, date, time, and duration.",
+        "Status badge colours distinguish actionable states (pending) from terminal states (declined, expired).",
+        "The page is responsive at 375 px width.",
+        "An empty state is shown when the owner has no bookings."
+      ],
+      "technical_notes": "Poll `GET /api/bookings?role=owner` every 30 seconds while the page is open, so status changes (e.g. walker accepts) appear without a manual refresh. Replace with WebSocket in a future sprint if latency matters.",
+      "areas": ["frontend"],
+      "size": "M",
+      "priority": "medium",
+      "depends_on": ["S3-T1"],
+      "requirement_ids": ["R4", "R5"],
+      "needs_clarification": false,
+      "clarification_note": null
+    },
+    {
+      "id": "S3-T5",
+      "title": "Build booking management UI for walkers",
+      "type": "feature",
+      "description": "Add a `/my-bookings` page (walker view) that shows incoming booking requests and the walker's confirmed upcoming schedule.\n\nEach pending request shows owner name, dog name (if provided), date/time, duration, and a countdown to the 30-minute expiry. Accept and Decline buttons call the endpoints from S3-T2.",
+      "acceptance_criteria": [
+        "Pending requests are shown at the top with a live countdown to expiry.",
+        "Confirmed bookings are shown below, ordered by date ascending.",
+        "Accept and Decline buttons call the correct endpoints and update the UI without a full page reload.",
+        "The page is responsive at 375 px width.",
+        "An empty state is shown when there are no pending requests and no upcoming bookings."
+      ],
+      "technical_notes": "Same 30-second poll as S3-T4 for the walker's booking list. The countdown timer is purely frontend — calculate remaining time from the booking's `created_at` timestamp.",
+      "areas": ["frontend"],
+      "size": "M",
+      "priority": "medium",
+      "depends_on": ["S3-T2"],
+      "requirement_ids": ["R4", "R5"],
+      "needs_clarification": false,
+      "clarification_note": null
+    },
+    {
+      "id": "S3-T6",
+      "title": "Wire up email notifications for booking events",
+      "type": "feature",
+      "description": "Implement the email-sending service and trigger it from the booking endpoints.\n\nEvents in this sprint: booking request received (to walker), booking confirmed (to owner), booking declined (to owner), booking expired (to owner).\n\nUse a transactional email provider (e.g. SendGrid or Resend). API key from environment variables. Plain-text emails are acceptable for the hackathon.",
+      "acceptance_criteria": [
+        "The walker receives an email when a new booking request is created.",
+        "The owner receives an email when their booking is confirmed.",
+        "The owner receives an email when their booking is declined.",
+        "The owner receives an email when their booking expires.",
+        "No email is sent if the provider call fails — log the error and continue; do not crash the booking endpoint.",
+        "The sender address and service base URL are configurable via environment variables."
+      ],
+      "technical_notes": "Wrap the send call in a fire-and-forget async task so a slow email provider does not add latency to the booking endpoint response. Use `asyncio.create_task` or a simple background task in FastAPI.",
+      "areas": ["backend"],
+      "size": "S",
+      "priority": "medium",
+      "depends_on": ["S3-T1", "S3-T2", "S3-T3"],
+      "requirement_ids": ["R9"],
+      "needs_clarification": false,
+      "clarification_note": null
+    }
+  ]
+}
