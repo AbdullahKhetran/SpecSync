@@ -1,0 +1,184 @@
+{
+  "project": {
+    "name": "PawRun",
+    "summary": "A two-sided mobile-first web platform connecting dog owners with vetted local dog walkers. Owners can browse walker profiles, book on-demand or scheduled walks, track their dog in real time during the walk, and pay through the platform. Walkers manage their availability, accept bookings, and receive payouts. The system handles authentication for both roles, booking lifecycle management, and push notifications for key events.",
+    "assumptions": [
+      "A single currency (USD) is sufficient for the hackathon scope.",
+      "Real-time tracking is GPS-based via the browser Geolocation API; no native app is required.",
+      "Payment processing uses Stripe; no custom payment gateway is built.",
+      "Email is the primary notification channel; push notifications are Phase 2."
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The system must support two user roles: dog owner and dog walker, each with a distinct registration and login flow.",
+      "source_quote": "customers should be able to sign up as a dog owner or apply to become a walker",
+      "kind": "functional"
+    },
+    {
+      "id": "R2",
+      "text": "Dog owners must be able to search for available walkers filtered by location (postcode radius) and date/time.",
+      "source_quote": "owners need to find a walker near them for a specific time slot",
+      "kind": "functional"
+    },
+    {
+      "id": "R3",
+      "text": "Each walker must have a public profile displaying their bio, service area, hourly rate, photos, and average rating.",
+      "source_quote": "walkers should have a profile page so owners can decide if they trust them",
+      "kind": "functional"
+    },
+    {
+      "id": "R4",
+      "text": "Owners must be able to book a walker for a specific date, time, and duration. The system must confirm availability before creating the booking.",
+      "source_quote": "owners can book a walker and the system should make sure the walker isn't already booked",
+      "kind": "functional"
+    },
+    {
+      "id": "R5",
+      "text": "Walkers must be able to accept or decline incoming booking requests within 30 minutes; unresponded requests expire automatically.",
+      "source_quote": "the walker gets a notification and can say yes or no, and if they don't respond it should cancel itself",
+      "kind": "functional"
+    },
+    {
+      "id": "R6",
+      "text": "During an active walk, the owner must be able to see the walker's live GPS location on a map.",
+      "source_quote": "owners want to see where their dog is during the walk on a map",
+      "kind": "functional"
+    },
+    {
+      "id": "R7",
+      "text": "Payment must be collected from the owner at booking confirmation and held in escrow; the walker receives the payout after the walk is marked complete.",
+      "source_quote": "payment should be taken when the booking is confirmed and the walker gets paid after the walk is done",
+      "kind": "functional"
+    },
+    {
+      "id": "R8",
+      "text": "After a walk is completed, the owner must be able to leave a star rating (1–5) and an optional text review for the walker.",
+      "source_quote": "owners should be able to rate the walker after the walk",
+      "kind": "functional"
+    },
+    {
+      "id": "R9",
+      "text": "The platform must send email notifications for: booking request received, booking confirmed, booking declined, walk started, walk completed, payment received.",
+      "source_quote": "both sides should get emails when important things happen like bookings and payments",
+      "kind": "functional"
+    },
+    {
+      "id": "R10",
+      "text": "All pages must be responsive and usable on mobile screens (minimum 375 px width).",
+      "source_quote": "most users will be on their phones so it has to work on mobile",
+      "kind": "non_functional"
+    },
+    {
+      "id": "R11",
+      "text": "Walker applications must go through an admin approval step before the profile is publicly visible.",
+      "source_quote": "we need to vet walkers before they appear on the platform",
+      "kind": "functional"
+    }
+  ],
+  "sprints": [
+    {
+      "id": "S1",
+      "order": 1,
+      "name": "Foundation",
+      "goal": "Stand up the project skeleton, database schema, and authentication for both user roles.",
+      "requirement_ids": ["R1", "R10", "R11"],
+      "deliverables": [
+        "Monorepo with backend (FastAPI) and frontend (React + Vite + Tailwind) scaffolded",
+        "PostgreSQL schema: users, walkers, bookings, reviews tables",
+        "JWT-based auth: registration, login, role-aware session for owner and walker",
+        "Admin approval endpoint for walker applications",
+        "Responsive layout shell (header, nav, mobile breakpoints)"
+      ],
+      "depends_on": [],
+      "rationale": "Authentication and the data schema are dependencies for every other feature. Nothing else can be built until roles, sessions, and the core tables exist."
+    },
+    {
+      "id": "S2",
+      "order": 2,
+      "name": "Discovery and profiles",
+      "goal": "Enable owners to search for walkers and view detailed walker profiles.",
+      "requirement_ids": ["R2", "R3"],
+      "deliverables": [
+        "Walker profile page (bio, photos, rate, service area, rating)",
+        "Search endpoint: filter by postcode radius and date/time availability",
+        "Search results UI with walker cards"
+      ],
+      "depends_on": ["S1"],
+      "rationale": "Search and profiles require the user records from S1. Booking (S3) requires search, so this sprint comes second."
+    },
+    {
+      "id": "S3",
+      "order": 3,
+      "name": "Booking lifecycle",
+      "goal": "Allow owners to book walkers and walkers to accept or decline, with automatic expiry.",
+      "requirement_ids": ["R4", "R5", "R9"],
+      "deliverables": [
+        "Booking creation endpoint with availability check",
+        "Accept / decline endpoints with 30-minute expiry job",
+        "Booking status UI for both roles",
+        "Email notifications: request received, confirmed, declined"
+      ],
+      "depends_on": ["S2"],
+      "rationale": "Booking depends on profiles and search (S2). Payment (S4) depends on a confirmed booking existing, so booking comes first."
+    },
+    {
+      "id": "S4",
+      "order": 4,
+      "name": "Payment and walk execution",
+      "goal": "Collect payment at booking, track the live walk, release the payout on completion.",
+      "requirement_ids": ["R6", "R7", "R9"],
+      "deliverables": [
+        "Stripe PaymentIntent created at booking confirmation; funds held",
+        "Walk-start and walk-complete endpoints",
+        "Live GPS tracking view (owner sees walker location via browser Geolocation + polling)",
+        "Payout transfer triggered on walk completion",
+        "Email notifications: walk started, walk completed, payment received"
+      ],
+      "depends_on": ["S3"],
+      "rationale": "Payment requires a confirmed booking from S3. Live tracking is part of the walk execution flow and is delivered in the same sprint to keep the booking-to-payment path shippable together."
+    },
+    {
+      "id": "S5",
+      "order": 5,
+      "name": "Reviews and polish",
+      "goal": "Let owners rate completed walks and harden the UI for the demo.",
+      "requirement_ids": ["R8"],
+      "deliverables": [
+        "Review submission endpoint and form (1–5 stars + optional text)",
+        "Aggregate rating displayed on walker profile",
+        "Loading states, error messages, and empty states across all views",
+        "End-to-end smoke test on all three sample scenarios"
+      ],
+      "depends_on": ["S4"],
+      "rationale": "Reviews require a completed walk (S4). Polish and testing are deferred to last so they do not block feature delivery."
+    }
+  ],
+  "client_questions": [
+    {
+      "id": "Q1",
+      "question": "When an owner books a walker, can they book for a recurring schedule (e.g. every weekday at 8 am), or is every booking a one-off?",
+      "why_it_matters": "Recurring bookings require a separate data model and availability logic. If they are in scope, Sprint 3 will take significantly longer.",
+      "requirement_ids": ["R4"]
+    },
+    {
+      "id": "Q2",
+      "question": "What happens if a walker cancels after the booking is already confirmed? Does the owner get a full refund automatically, or is there a cancellation window?",
+      "why_it_matters": "The cancellation and refund rules affect the payment escrow flow in Sprint 4 and must be implemented before go-live.",
+      "requirement_ids": ["R5", "R7"]
+    },
+    {
+      "id": "Q3",
+      "question": "Should the platform support multiple dogs per booking (e.g. an owner has two dogs and wants to book one walk for both), or is each booking always for one dog?",
+      "why_it_matters": "Multi-dog bookings change the booking data model and may affect pricing rules.",
+      "requirement_ids": ["R4"]
+    },
+    {
+      "id": "Q4",
+      "question": "Who pays the Stripe processing fee — the owner (added to the booking price) or the platform (absorbed as a cost)?",
+      "why_it_matters": "This changes how the PaymentIntent amount is calculated and must be decided before the payment sprint.",
+      "requirement_ids": ["R7"]
+    }
+  ]
+}
