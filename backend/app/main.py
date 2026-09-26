@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routes import router
 
 app = FastAPI(
-    title="Ticket Planner API",
+    title="TicketSeed API",
     description="Converts a client PRD into sprint plans and developer tickets.",
     version="0.1.0",
 )

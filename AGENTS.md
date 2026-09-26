@@ -1,13 +1,13 @@
-# AGENTS.md — Ticket Planner
+# AGENTS.md — TicketSeed
 
 > This file is the Bob IDE project context. Read it at the start of every session.
-> Source of truth: `docs/PRD-ticket-planner.md`. When in doubt, consult the PRD.
+> Source of truth: `docs/PRD-ticketseed.md`. When in doubt, consult the PRD.
 
 ---
 
 ## Project summary
 
-**Ticket Planner** converts a non-technical client PRD (Markdown) into an ordered sprint plan and developer-ready tickets, with full traceability back to the client's own words.
+**TicketSeed** converts a non-technical client PRD (Markdown) into an ordered sprint plan and developer-ready tickets, with full traceability back to the client's own words.
 
 Two capabilities:
 1. `POST /api/plan/sprints` — PRD → sprint plan + extracted requirements + client questions
@@ -20,10 +20,10 @@ Deployed as a single Vercel project: static React frontend on the CDN, FastAPI b
 ## Repository layout
 
 ```
-ticket-planner/
+ticketseed/
 ├── AGENTS.md                  ← this file
 ├── docs/
-│   └── PRD-ticket-planner.md  ← full spec, read before coding anything
+│   └── PRD-ticketseed.md  ← full spec, read before coding anything
 ├── samples/
 │   ├── prd-clean.md
 │   ├── prd-vague.md
@@ -163,7 +163,7 @@ ticket-planner/
 
 - Use **Plan mode** for API design and architecture decisions.
 - Use **Agent mode** for implementing models, validators, routes, views, and tests.
-- Always pass `@docs/PRD-ticket-planner.md` as context when starting a new task.
+- Always pass `@docs/PRD-ticketseed.md` as context when starting a new task.
 - Run Bob's built-in code review before merging any branch to `main`.
 - Use Bob to generate commit messages and PR descriptions.
 - **Do not** use Bob to iterate on prompt wording — test prompts through the running app.

@@ -1,8 +1,8 @@
-# Project Checklist — Ticket Planner
+# Project Checklist — TicketSeed
 
 > Status key: ✅ Done · ⬜ Remaining · 🔲 Blocked (needs something else first)
 >
-> Last updated: see git log. Cross-reference with [`docs/PRD-ticket-planner.md`](PRD-ticket-planner.md) §15.2 for the full deliverables table.
+> Last updated: see git log. Cross-reference with [`docs/PRD-ticketseed.md`](PRD-ticketseed.md) §15.2 for the full deliverables table.
 
 ---
 

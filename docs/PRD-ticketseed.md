@@ -376,7 +376,7 @@ Drag-and-drop area for `.md`, a paste box as an alternative, rendered preview, a
 ## 11. Repository layout
 
 ```
-ticket-planner/
+ticketseed/
 ├── AGENTS.md                  # generated with /init in Bob IDE, then edited
 ├── docs/
 │   └── PRD.md                 # this document

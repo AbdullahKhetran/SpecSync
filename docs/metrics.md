@@ -1,4 +1,4 @@
-# Metrics — Ticket Planner
+# Metrics — TicketSeed
 
 Captured by Person B on Sunday midday, using the three sample PRDs.  
 These numbers go into the demo slides (section 18 of the PRD) and the video narration.
