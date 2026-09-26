@@ -1,4 +1,4 @@
-# Technical PRD: Ticket Planner
+# Technical PRD: TicketSeed
 
 **Event:** IBM Bob 2.0 Hackathon (Sep 25 to 27, 2026)
 **Team size:** 4
